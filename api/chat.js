@@ -32,18 +32,45 @@ export default async function handler(req, res) {
       knowledgeBase = parseCSVToQA(csvText);
     } catch (e) {
       console.error('Sheet fetch error:', e.message);
+      // If sheet fails, chatbot still works using base systemPrompt only
     }
   }
 
-  const fullSystemPrompt = knowledgeBase
-    ? `${systemPrompt}
+  // ── Fetch live menu from a second Google Sheet tab (published as CSV) ──
+  let menuBlock = '';
+  const menuSheetUrl = process.env.MENU_SHEET_URL;
+
+  if (menuSheetUrl) {
+    try {
+      const menuCsvRes = await fetch(menuSheetUrl);
+      const menuCsvText = await menuCsvRes.text();
+      menuBlock = parseCSVToMenu(menuCsvText);
+    } catch (e) {
+      console.error('Menu sheet fetch error:', e.message);
+    }
+  }
+
+  let fullSystemPrompt = systemPrompt;
+
+  if (menuBlock) {
+    fullSystemPrompt += `
+
+--- LIVE MENU (updated by restaurant owner, this is the current and correct menu) ---
+${menuBlock}
+--- END OF LIVE MENU ---
+
+IMPORTANT: The menu above is the definitive, up-to-date menu. Use these exact dishes, prices, and categories when answering menu questions — ignore any older menu info in your earlier instructions.`;
+  }
+
+  if (knowledgeBase) {
+    fullSystemPrompt += `
 
 --- LIVE FAQ KNOWLEDGE BASE (updated daily by restaurant owner) ---
 ${knowledgeBase}
 --- END OF FAQ KNOWLEDGE BASE ---
 
-IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, use that exact answer. This data is more current than anything else in your instructions.`
-    : systemPrompt;
+IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, use that exact answer. This data is more current than anything else in your instructions.`;
+  }
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -87,7 +114,7 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
 // ── Convert published Google Sheet CSV into Q&A text block ──
 function parseCSVToQA(csv) {
   const lines = csv.trim().split('\n');
-  const rows = lines.slice(1);
+  const rows = lines.slice(1); // skip header row (Question, Answer)
   let result = '';
   for (const row of rows) {
     const cols = parseCSVLine(row);
@@ -96,6 +123,57 @@ function parseCSVToQA(csv) {
     }
   }
   return result;
+}
+
+// ── Convert published Google Sheet CSV into a grouped menu text block ──
+// Expected columns (header row): Category, Dish, Price, Description, Available
+// Description and Available are optional. Available = "N"/"No" hides the item.
+function parseCSVToMenu(csv) {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) return '';
+
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+  const catIdx = headers.indexOf('category');
+  const dishIdx = headers.indexOf('dish');
+  const priceIdx = headers.indexOf('price');
+  const descIdx = headers.indexOf('description');
+  const availIdx = headers.indexOf('available');
+
+  if (dishIdx === -1) return ''; // sheet not in expected format
+
+  const menu = {};
+  const order = []; // preserve category order as they appear
+
+  for (const row of lines.slice(1)) {
+    const cols = parseCSVLine(row);
+    const dish = (cols[dishIdx] || '').trim();
+    if (!dish) continue;
+
+    if (availIdx !== -1) {
+      const avail = (cols[availIdx] || '').trim().toLowerCase();
+      if (avail === 'n' || avail === 'no') continue;
+    }
+
+    const category = catIdx !== -1 && cols[catIdx]?.trim() ? cols[catIdx].trim() : 'Menu';
+    const price = priceIdx !== -1 ? (cols[priceIdx] || '').trim() : '';
+    const desc = descIdx !== -1 ? (cols[descIdx] || '').trim() : '';
+
+    let line = `- ${dish}`;
+    if (price) line += ` — ₹${price}`;
+    if (desc) line += ` (${desc})`;
+
+    if (!menu[category]) {
+      menu[category] = [];
+      order.push(category);
+    }
+    menu[category].push(line);
+  }
+
+  let result = '';
+  for (const category of order) {
+    result += `${category}:\n${menu[category].join('\n')}\n\n`;
+  }
+  return result.trim();
 }
 
 // Handles commas inside quoted fields correctly
