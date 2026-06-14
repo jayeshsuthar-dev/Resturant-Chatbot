@@ -75,6 +75,7 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
+    // Keep only the most recent messages to control prompt size and avoid rate limits
     const recentMessages = messages.slice(-10);
     const geminiMessages = recentMessages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
@@ -87,7 +88,14 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
       body: JSON.stringify({
         system_instruction: { parts: [{ text: fullSystemPrompt }] },
         contents: geminiMessages,
-        generationConfig: { maxOutputTokens: 800, temperature: 0.6, topP: 0.9 }
+        generationConfig: {
+          maxOutputTokens: 800,
+          temperature: 0.6,
+          topP: 0.9,
+          // Disable "thinking" tokens — for a simple FAQ/menu bot these just
+          // eat into maxOutputTokens and cause replies to cut off mid-sentence.
+          thinkingConfig: { thinkingBudget: 0 }
+        }
       })
     });
 
@@ -95,20 +103,41 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
 
     if (!response.ok) {
       console.error('Gemini API error:', JSON.stringify(data));
-      return res.status(response.status).json({
-        error: data.error?.message || 'Gemini API error',
-        details: data.error
+
+      // Give the customer a sensible message instead of a raw error.
+      // Rate limit (free tier = 10 requests/min) is the most common cause.
+      let friendlyReply;
+      if (response.status === 429) {
+        friendlyReply = "We're getting a lot of questions right now. Please wait a few seconds and try again, or call us at 022 2820 2735.";
+      } else {
+        friendlyReply = "I'm unable to retrieve that information right now. Please try again in a moment, or call us at 022 2820 2735.";
+      }
+
+      // Return 200 with a reply field so the frontend always shows something coherent
+      return res.status(200).json({
+        reply: friendlyReply,
+        error: data.error?.message,
+        statusCode: response.status
       });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
-      || "I'm unable to retrieve that information right now. Please try again in a few moments.";
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    let reply = candidate?.content?.parts?.[0]?.text;
 
-    return res.status(200).json({ reply, usedKnowledgeBase: !!knowledgeBase });
+    if (!reply) {
+      console.error('Empty response from Gemini. finishReason:', finishReason, JSON.stringify(data));
+      reply = "Sorry, that took a moment too long to process. Could you ask again?";
+    }
+
+    return res.status(200).json({ reply, usedKnowledgeBase: !!knowledgeBase, finishReason });
 
   } catch (error) {
     console.error('Server error:', error.message);
-    return res.status(500).json({ error: error.message });
+    return res.status(200).json({
+      reply: "I'm having trouble connecting right now. Please try again in a moment, or call us at 022 2820 2735.",
+      error: error.message
+    });
   }
 }
 
