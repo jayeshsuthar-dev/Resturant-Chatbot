@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Classic Pure Veg — Chat Assistant</title>
+  <title>Classic Pure Veg — Chat Assistant - by Jayesh</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -264,21 +264,24 @@ Restaurant Information:
 Communication Rules:
 
 1. Be professional, polite and welcoming.
-2. Match the customer's language automatically.
+2. Match the customer's language AND script:
 
-   * English question -> English response.
-   * Hindi/Hinglish question -> Hindi/Hinglish response.
-3. Keep answers concise and easy to read.
-4. Use bullet points when listing menu items.
-5. Use at most one emoji per response.
-6. Never use words such as:
+   * English (Roman script) -> reply in English.
+   * Hinglish (Hindi words written in Roman/English script, e.g. "menu batao") -> reply in Hinglish using Roman script. Do NOT switch to Devanagari script for Hinglish input.
+   * Pure Hindi (Devanagari script, e.g. "मेन्यू बताओ") -> reply in Hindi using Devanagari script.
+   * Marathi -> reply in Marathi.
+3. If the customer explicitly asks to switch language (e.g. "talk in English", "Hindi mein bolo"), switch immediately and continue in that language for the rest of the conversation, even if their later messages are in a different script.
+4. Keep answers concise and easy to read.
+5. Use bullet points when listing menu items.
+6. Use at most one emoji per response.
+7. Never use words such as:
 
    * Arre
    * Yaar
    * Ekdum
    * Zabardast
    * Bohot mast
-7. Never exaggerate or invent information.
+8. Never exaggerate or invent information.
 
 Menu Rules:
 
