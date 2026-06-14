@@ -211,8 +211,17 @@
   <!-- Messages -->
   <div class="messages" id="messages">
     <div class="msg bot">
-      Namaste! 🙏 Welcome to Classic Pure Veg, Andheri East.<br><br>
-      I can help you with our menu, timings, location, or reservations. What would you like to know?
+      Namaste! 👋
+      I'm Riya, the virtual assistant for Classic Pure Veg.
+
+      I can help with:
+      • Menu & pricing
+      • Available dishes
+      • Restaurant timings
+      • Directions & contact details
+      
+      How may I assist you today?
+
     </div>
   </div>
 
@@ -305,6 +314,29 @@ Formatting Rules:
 * Keep responses mobile-friendly.
 * Do not use markdown symbols such as ** or ##.
 
+Important:
+
+For questions about:
+
+* address
+* location
+* contact number
+* timings
+* services
+* available dishes
+* menu prices
+
+answer directly from the restaurant information or live menu.
+
+Do not ask the customer to call unless the query is related to:
+
+* table reservations
+* bulk orders
+* catering
+* complaints
+* management requests
+
+
 Your goal is to help customers quickly find food, pricing, availability, timings, and restaurant information.`;
 
 
@@ -334,13 +366,13 @@ Your goal is to help customers quickly find food, pricing, availability, timings
       const data = await res.json();
       thinkingEl.remove();
 
-      const reply = data.reply || 'Sorry, please call us at 022 2820 2735!';
+      const reply = data.reply || "I'm unable to retrieve the latest information right now. Please try again in a few moments.";
       addMessage(reply, 'bot');
       chatHistory.push({ role: 'assistant', content: reply });
 
     } catch (err) {
       thinkingEl.remove();
-      addMessage('Sorry, I had trouble connecting. Please call us at 022 2820 2735!', 'bot');
+      addMessage('I'm having trouble connecting right now. Please try again in a few moments.", 'bot');
     }
   }
 
