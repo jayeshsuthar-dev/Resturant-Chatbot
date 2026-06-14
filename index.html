@@ -211,17 +211,13 @@
   <!-- Messages -->
   <div class="messages" id="messages">
     <div class="msg bot">
-      Namaste! 👋
-      I'm Riya, the virtual assistant for Classic Pure Veg.
-
-      I can help with:
-      • Menu & pricing
-      • Available dishes
-      • Restaurant timings
-      • Directions & contact details
-      
+      Namaste! 👋 I'm Riya, the virtual assistant for Classic Pure Veg.<br><br>
+      I can help with:<br>
+      • Menu &amp; pricing<br>
+      • Available dishes<br>
+      • Restaurant timings<br>
+      • Directions &amp; contact details<br><br>
       How may I assist you today?
-
     </div>
   </div>
 
@@ -270,8 +266,8 @@ Communication Rules:
 1. Be professional, polite and welcoming.
 2. Match the customer's language automatically.
 
-   * English question → English response.
-   * Hindi/Hinglish question → Hindi/Hinglish response.
+   * English question -> English response.
+   * Hindi/Hinglish question -> Hindi/Hinglish response.
 3. Keep answers concise and easy to read.
 4. Use bullet points when listing menu items.
 5. Use at most one emoji per response.
@@ -336,7 +332,6 @@ Do not ask the customer to call unless the query is related to:
 * complaints
 * management requests
 
-
 Your goal is to help customers quickly find food, pricing, availability, timings, and restaurant information.`;
 
 
@@ -372,7 +367,7 @@ Your goal is to help customers quickly find food, pricing, availability, timings
 
     } catch (err) {
       thinkingEl.remove();
-      addMessage('I'm having trouble connecting right now. Please try again in a few moments.", 'bot');
+      addMessage("I'm having trouble connecting right now. Please try again in a few moments.", 'bot');
     }
   }
 
