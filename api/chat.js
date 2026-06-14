@@ -75,7 +75,8 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-    const geminiMessages = messages.map(m => ({
+    const recentMessages = messages.slice(-10);
+    const geminiMessages = recentMessages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
@@ -86,7 +87,7 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
       body: JSON.stringify({
         system_instruction: { parts: [{ text: fullSystemPrompt }] },
         contents: geminiMessages,
-        generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
+        generationConfig: { maxOutputTokens: 800, temperature: 0.6, topP: 0.9 }
       })
     });
 
@@ -101,7 +102,7 @@ IMPORTANT: If a customer's question closely matches one of the Q&A pairs above, 
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
-      || "Sorry, I couldn't process that. Please call us directly!";
+      || "I'm unable to retrieve that information right now. Please try again in a few moments.";
 
     return res.status(200).json({ reply, usedKnowledgeBase: !!knowledgeBase });
 
